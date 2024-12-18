@@ -25,6 +25,7 @@ jobs:
         IMAGE_JSON='${{ matrix.IMAGE }}'
         TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo $IMAGE_JSON | jq -r '.user // "library"')/$(echo $IMAGE_JSON | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')
         IMAGES=$(jq -n --argjson tags "$TAGS" --arg user "$(echo $IMAGE_JSON | jq -r '.user // "library"')" --arg image "$(echo $IMAGE_JSON | jq -r '.image')" '{user: $user, image: $image, tags: $tags}')
+        echo $IMAGES
         echo "::set-output name=images::$IMAGES"
 
   to-ghcr:

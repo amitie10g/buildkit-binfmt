@@ -9,12 +9,10 @@ on:
 
 jobs:
   get-tags:
-    strategy:
-      matrix:
-        IMAGE:
-        - '{"user": "tonistiigi", "image": "binfmt"}'
-        - '{"user": "moby", "image": "buildkit"}'
-
+    env:
+      IMAGES: >
+        tonistiigi/binfmt
+        moby/buildkit
     runs-on: ubuntu-latest
     outputs:
       images: ${{ steps.list-tags.outputs.images }}
@@ -22,13 +20,16 @@ jobs:
     - name: List Docker Image Tags
       id: list-tags
       run: |
-        IMAGE_JSON='${{ matrix.IMAGE }}'
-        USER=$(echo $IMAGE_JSON | jq -r '.user // "library"')
-        IMAGE=$(echo $IMAGE_JSON | jq -r '.image')
-        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$USER/$IMAGE/tags?page_size=100" | jq -r '.results[].name')
-        IMAGES=$(for tag in $TAGS; do echo "$USER/$IMAGE:$tag"; done | jq -R -s -c 'split("\n")[:-1]')
-        echo $IMAGES
-        echo "images=$IMAGES" >> $GITHUB_OUTPUT
+        IMAGES_TAGS=""
+        for IMAGE in $IMAGES; do
+          TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/${IMAGE}/tags?page_size=100" | jq -r '.results[].name')
+          for tag in $TAGS; do
+            IMAGES_TAGS+="${IMAGE}:$tag\n"
+          done
+        done
+        IMAGES_TAGS=$(echo -e $IMAGES_TAGS | jq -R -s -c 'split("\n")[:-1]')
+        echo $IMAGES_TAGS
+        echo "images=$IMAGES_TAGS" >> $GITHUB_OUTPUT
 
   to-ghcr:
     needs: get-tags

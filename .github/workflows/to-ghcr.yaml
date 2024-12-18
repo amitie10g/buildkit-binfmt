@@ -55,16 +55,16 @@ jobs:
     - name: Get digests
       id: get-digests
       run: |
-        MANIFEST=$(docker manifest inspect ${{ matrix.IMAGE }} || exit $?
+        MANIFEST=$(docker manifest inspect "${{ matrix.IMAGE }}" || exit $?
 
-        I386_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "386") | .digest')
-        AMD64_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "amd64") | .digest')
-        ARMV6_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v6") | .digest')
-        ARMV7_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v7") | .digest')
-        ARM64_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "arm64") | .digest')
-        PPC64LE_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "ppc64le") | .digest')
-        RISCV64_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "riscv64") | .digest')
-        S390X_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "s390x") | .digest')
+        I386_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "386") | .digest')
+        AMD64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "amd64") | .digest')
+        ARMV6_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v6") | .digest')
+        ARMV7_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v7") | .digest')
+        ARM64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm64") | .digest')
+        PPC64LE_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "ppc64le") | .digest')
+        RISCV64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "riscv64") | .digest')
+        S390X_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "s390x") | .digest')
 
         tags=()
 
@@ -77,7 +77,7 @@ jobs:
         [ -n "$RISCV64_DIGEST" ] && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$RISCV64_DIGEST")
         [ -n "$S390X_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$S390X_DIGEST")
 
-        echo "images=$(printf '%s\n' "${tags[@]}" | jq -Rc 'split("\n")[:-1]')" >> $GITHUB_ENV
+        echo "images=$(printf '%s\n' "${tags[@]}" | jq -Rc 'split("\n")[:-1]')") >> "$GITHUB_ENV"
 
     - name: Push binfmt to ghcr.io
       uses: int128/docker-manifest-create-action@v2

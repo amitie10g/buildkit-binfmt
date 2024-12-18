@@ -27,14 +27,14 @@ jobs:
         IMAGE=$(echo $IMAGE_JSON | jq -r '.image')
         TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$USER/$IMAGE/tags?page_size=100" | jq -r '.results[].name')
         IMAGES=$(for tag in $TAGS; do echo "$USER/$IMAGE:$tag"; done | jq -R -s -c 'split("\n")[:-1]')
-        echo $IMAGES
         echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
   check:
     needs: get-tags
     runs-on: ubuntu-latest
     steps:
-    - run: ${{ fromJson(needs.get-tags.outputs.images) }}
+    - name: Check Docker Image Tags
+      run: echo "${{ needs.get-tags.outputs.images }}"
 
   to-ghcr:
     needs: check

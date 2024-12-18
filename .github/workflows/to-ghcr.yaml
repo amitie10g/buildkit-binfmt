@@ -30,8 +30,14 @@ jobs:
         echo $IMAGES
         echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
-  to-ghcr:
+  check:
     needs: get-tags
+    runs-on: ubuntu-latest
+    steps:
+    - run: ${{ fromJson(needs.get-tags.outputs.images) }}
+
+  to-ghcr:
+    needs: check
     runs-on: ubuntu-latest
 
     strategy:

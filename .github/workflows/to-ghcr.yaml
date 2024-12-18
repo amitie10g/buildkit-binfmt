@@ -22,7 +22,8 @@ jobs:
     - name: List Docker Image Tags
       id: list-tags
       run: |
-        tags="$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')"
+        IMAGE_JSON='${{ matrix.IMAGE }}'
+        tags="$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo ${IMAGE_JSON} | jq -r '.user // "library"')/$(echo ${IMAGE_JSON} | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')"
         echo "::set-output name=tags::$tags"
 
   to-ghcr:

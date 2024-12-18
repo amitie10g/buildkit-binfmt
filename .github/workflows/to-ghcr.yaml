@@ -26,7 +26,7 @@ jobs:
         USER=$(echo $IMAGE_JSON | jq -r '.user // "library"')
         IMAGE=$(echo $IMAGE_JSON | jq -r '.image')
         TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$USER/$IMAGE/tags?page_size=100" | jq -r '.results[].name')
-        IMAGES=$(jq -n --arg user "$USER" --arg image "$IMAGE" --arg tags "$(echo $TAGS | jq -c -R -s 'split("\n")[:-1]')" '[{user: $user, image: $image, tags: $tags}]')
+        IMAGES=$(for tag in $TAGS; do echo "$USER/$IMAGE:$tag"; done | jq -R -s -c 'split("\n")[:-1]')
         echo $IMAGES
         echo "images=$IMAGES" >> $GITHUB_OUTPUT
 

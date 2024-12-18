@@ -17,7 +17,7 @@ jobs:
 
     runs-on: ubuntu-latest
     outputs:
-      tags: ${{ steps.list-tags.outputs.tags }}
+      tags: ${{ steps.list-tags.outputs.images }}
     steps:
     - name: List Docker Image Tags
       id: list-tags
@@ -25,8 +25,7 @@ jobs:
         IMAGE_JSON='${{ matrix.IMAGE }}'
         TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo $IMAGE_JSON | jq -r '.user // "library"')/$(echo $IMAGE_JSON | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')
         IMAGES=$(jq -n --argjson tags "$TAGS" --arg user "$(echo $IMAGE_JSON | jq -r '.user // "library"')" --arg image "$(echo $IMAGE_JSON | jq -r '.image')" '{user: $user, image: $image, tags: $tags}')
-        echo $IMAGES
-        echo "IMAGES=$IMAGES" >> $GITHUB_ENV
+        echo "::set-output name=images::$IMAGES"
 
   to-ghcr:
     needs: get-tags
@@ -34,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        IMAGE: ${{ env.IMAGES }}
+        IMAGE: ${{ fromJson(needs.get-tags.outputs.images) }}
         
     steps:
     - name: Login to Docker Hub

@@ -10,7 +10,7 @@ on:
 jobs:
   get-tags:
     env:
-      IMAGES: >
+      IMAGES: >-
         tonistiigi/binfmt
         moby/buildkit
     runs-on: ubuntu-latest

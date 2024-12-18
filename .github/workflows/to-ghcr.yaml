@@ -23,8 +23,9 @@ jobs:
       id: list-tags
       run: |
         IMAGE_JSON='${{ matrix.IMAGE }}'
-        tags="$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo ${IMAGE_JSON} | jq -r '.user // "library"')/$(echo ${IMAGE_JSON} | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')"
-        echo "::set-output name=tags::$tags"
+        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo $IMAGE_JSON | jq -r '.user // "library"')/$(echo $IMAGE_JSON | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')
+        IMAGE=$(jq -n --argjson tags "$TAGS" --arg user "$(echo $IMAGE_JSON | jq -r '.user // "library"')" --arg image "$(echo $IMAGE_JSON | jq -r '.image')" '{user: $user, image: $image, tags: $tags}')
+        echo "::set-output name=images::$IMAGE"
 
   to-ghcr:
     needs: get-tags
@@ -32,7 +33,7 @@ jobs:
 
     strategy:
       matrix:
-        TAG: ${{ fromJSON(needs.get-tags.outputs.tags) }}
+        IMAGE: ${{ fromJSON(needs.get-tags.outputs.images) }}
         
     steps:
     - name: Login to Docker Hub
@@ -51,7 +52,7 @@ jobs:
     - name: Get digests
       id: get-digests
       run: |
-        MANIFEST=$(docker manifest inspect $(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image'):${{ matrix.TAG }}) || exit $?
+        MANIFEST=$(docker manifest inspect ${{ matrix.IMAGE }} || exit $?
 
         I386_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "386") | .digest')
         AMD64_DIGEST=$(echo $MANIFEST | jq -r '.manifests[] | select(.platform.architecture == "amd64") | .digest')

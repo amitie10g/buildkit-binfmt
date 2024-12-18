@@ -23,10 +23,12 @@ jobs:
       id: list-tags
       run: |
         IMAGE_JSON='${{ matrix.IMAGE }}'
-        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$(echo $IMAGE_JSON | jq -r '.user // "library"')/$(echo $IMAGE_JSON | jq -r '.image')/tags?page_size=100" | jq -cr '[.results[].name]')
-        IMAGES=$(jq -n --argjson tags "$TAGS" --arg user "$(echo $IMAGE_JSON | jq -r '.user // "library"')" --arg image "$(echo $IMAGE_JSON | jq -r '.image')" '{user: $user, image: $image, tags: $tags}')
+        USER=$(echo $IMAGE_JSON | jq -r '.user // "library"')
+        IMAGE=$(echo $IMAGE_JSON | jq -r '.image')
+        TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/$USER/$IMAGE/tags?page_size=100" | jq -r '.results[].name')
+        IMAGES=$(for tag in $TAGS; do echo "$USER/$IMAGE:$tag"; done)
         echo $IMAGES
-        echo "::set-output name=images::$IMAGES"
+        echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
   to-ghcr:
     needs: get-tags

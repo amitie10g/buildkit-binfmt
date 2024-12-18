@@ -30,15 +30,8 @@ jobs:
         echo $IMAGES
         echo "images=$IMAGES" >> $GITHUB_OUTPUT
 
-  check:
-    needs: get-tags
-    runs-on: ubuntu-latest
-    steps:
-    - name: Check Docker Image Tags
-      run: echo "${{ needs.get-tags.outputs.images }}"
-
   to-ghcr:
-    needs: check
+    needs: get-tags
     runs-on: ubuntu-latest
 
     strategy:

@@ -10,7 +10,7 @@ on:
 jobs:
   get-tags:
     env:
-      IMAGES: >-
+      IMAGES: >
         tonistiigi/binfmt
         moby/buildkit
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
             IMAGES_TAGS+="${IMAGE}:$tag\n"
           done
         done
-        IMAGES_TAGS=$(echo -e $IMAGES_TAGS | jq -R -s -c 'split("\n")[:-1]')
+        IMAGES_TAGS=$(echo -e $IMAGES_TAGS | sed '/^$/d' | jq -R -s -c 'split("\n")[:-1]')
         echo $IMAGES_TAGS
         echo "images=$IMAGES_TAGS" >> $GITHUB_OUTPUT
 

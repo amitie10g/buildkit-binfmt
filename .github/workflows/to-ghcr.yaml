@@ -4,82 +4,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  get-tags:
-    env:
-      IMAGES: >
-        tonistiigi/binfmt
-        moby/buildkit
-    runs-on: ubuntu-latest
-    outputs:
-      images: ${{ steps.list-tags.outputs.images }}
-
-    steps:
-    - name: List Docker Image Tags
-      id: list-tags
-      run: |
-        IMAGES_TAGS=""
-        for IMAGE in $IMAGES; do
-          TAGS=$(curl -s "https://registry.hub.docker.com/v2/repositories/${IMAGE}/tags?page_size=100" | jq -r '.results[].name')
-          for tag in $TAGS; do
-            IMAGES_TAGS+="${IMAGE}:$tag\n"
-          done
-        done
-        IMAGES_TAGS=$(echo -e $IMAGES_TAGS | sed '/^$/d' | jq -R -s -c 'split("\n")[:-1]')
-        echo "images=$IMAGES_TAGS" >> $GITHUB_OUTPUT
-
-  to-ghcr:
-    needs: get-tags
-    runs-on: ubuntu-latest
+  Clone:
     strategy:
-      fail-fast: false
       matrix:
-        IMAGE: ${{ fromJson(needs.get-tags.outputs.images) }}
-
+        image:
+        - tonistiigi/binfmt
+        - moby/buildkit
+    runs-on: ubuntu-latest
     steps:
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Login to GHCR
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.repository_owner }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Get digests
-      id: get-digests
-      run: |
-        MANIFEST=$(docker manifest inspect "${{ matrix.IMAGE }}" || exit $?
-
-        I386_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "386") | .digest')
-        AMD64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "amd64") | .digest')
-        ARMV6_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v6") | .digest')
-        ARMV7_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm" and .platform.variant == "v7") | .digest')
-        ARM64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "arm64") | .digest')
-        PPC64LE_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "ppc64le") | .digest')
-        RISCV64_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "riscv64") | .digest')
-        S390X_DIGEST=$(echo "$MANIFEST" | jq -r '.manifests[] | select(.platform.architecture == "s390x") | .digest')
-
-        tags=()
-
-        [ -n "$I386_DIGEST" ]    && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$I386_DIGEST")
-        [ -n "$AMD64_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$AMD64_DIGEST")
-        [ -n "$ARMV6_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$ARMV6_DIGEST")
-        [ -n "$ARMV7_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$ARMV7_DIGEST")
-        [ -n "$ARM64_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$ARM64_DIGEST")
-        [ -n "$PPC64LE_DIGEST" ] && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$PPC64LE_DIGEST")
-        [ -n "$RISCV64_DIGEST" ] && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$RISCV64_DIGEST")
-        [ -n "$S390X_DIGEST" ]   && tags+=("$(echo "${{ matrix.IMAGE }}" | jq -r '.user // "library"')/$(echo "${{ matrix.IMAGE }}" | jq -r '.image')@$S390X_DIGEST")
-
-        echo "images=$(printf '%s\n' "${tags[@]}" | jq -Rc 'split("\n")[:-1]')") >> "$GITHUB_ENV"
-
-    - name: Push binfmt to ghcr.io
-      uses: int128/docker-manifest-create-action@v2
-      with:
-        tags: |
-         ghcr.io/${{ github.repository_owner }}/$(echo "${{ matrix.IMAGE }}:${{ matrix.TAG }}
-        sources: |
-          ${{ fromJSON(env.images) }}
+    - uses: actions/setup-go@v5
+    - uses: imjasonh/setup-crane@v0.4
+    - run: |
+        tags=$(crane ls ${{ matrix.image }})
+        for tag in $tags; do
+          crane copy ${{ matrix.image }}:$tag ghcr.io/${{ github.repository_owner }}/$(echo ${{ matrix.image }} | cut -d'/' -f2 | cut -d':' -f1):$tag
+        done

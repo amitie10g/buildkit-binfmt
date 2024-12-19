@@ -1,5 +1,9 @@
 name: docker image to ghcr
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   workflow_dispatch:
 

@@ -6,10 +6,13 @@ permissions:
 
 on:
   workflow_dispatch:
+  schedule: 
+   - cron: '0 0 * * 0'
 
 jobs:
   Clone:
     strategy:
+      fail-fast: false
       matrix:
         image:
         - tonistiigi/binfmt
@@ -19,7 +22,6 @@ jobs:
     - uses: actions/setup-go@v5
     - uses: imjasonh/setup-crane@v0.4
     - run: |
-        tags=$(crane ls ${{ matrix.image }})
-        for tag in $tags; do
+        for tag in $(crane ls ${{ matrix.image }}); do
           crane copy ${{ matrix.image }}:$tag ghcr.io/${{ github.repository_owner }}/$(echo ${{ matrix.image }} | cut -d'/' -f2 | cut -d':' -f1):$tag
         done

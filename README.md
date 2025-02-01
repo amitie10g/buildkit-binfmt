@@ -1,5 +1,5 @@
 # This project
-This repository exists solely to clone some Docker images (namely [``tonistiigi/binfmt``](https://hub.docker.com/r/tonistiigi/binfmt) and [``moby/buildkit``](https://hub.docker.com/r/moby/buildkit)) from the **Docker Hub container registry** to **GitHub container registry** (**GitHub Packages**) using [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md), in order to be used in my own **GitHub Actions** workflows that use [Buildkit](https://github.com/moby/buildkit), avoiding exhausting the quota from Docker Hub. You may use them, too.
+This repository exists solely to clone some Docker images (namely [``tonistiigi/binfmt``](https://hub.docker.com/r/tonistiigi/binfmt) and [``moby/buildkit``](https://hub.docker.com/r/moby/buildkit)) from the **Docker Hub container registry** to **GitHub Artifact registry** (**GitHub Packages**) using [crane](https://github.com/google/go-containerregistry/blob/main/cmd/crane/doc/crane.md), in order to be used in my own **GitHub Actions** workflows that use [Buildkit](https://github.com/moby/buildkit), avoiding exhausting the quota from Docker Hub. You may use them, too.
 
 Images are built weekly.
 
